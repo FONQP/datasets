@@ -1,0 +1,39 @@
+sampler = "lhs"
+units = "um"
+
+shape_list = [
+    "polygon",
+]
+
+get = [
+    "S_parameters",
+    "E_fields",
+]
+
+[simulation]
+resolution = 150
+lambda_start = 0.6
+lambda_end = 0.9
+lambda_step = 0.001
+
+[cell]
+pml = {h = 1.2}
+airgap = 1.2
+
+[substrate]
+h = 1.2
+material = "SiO2"
+
+[shapes]
+material = "Si_400_1000"
+
+[shapes.polygon]
+num_samples = 1
+params = ["h", "l", "a", "n"]
+param_ranges = { h = [0.13, 0.100], l = [0.15, 0.100], a = [0.354167, 0.220], n = [6.0, 6.5] }
+
+[shapes.cuboid]
+num_samples = 1
+params = ["h", "l", "w", "a", "b"]
+param_ranges = { h = [0.010, 0.100], l = [0.010, 0.100], w = [0.010, 0.100], a = [0.010, 0.100], b = [0.010, 0.100] }
+
