@@ -10,37 +10,37 @@ lambda_end = 0.9
 lambda_step = 0.001
 
 [cell]
-pml = {h = 1}
-airgap = 0.8
+pml = {h = 1.2}
+airgap = 1
 
 [substrate]
-h = 1
+h = 1.2
 material = "SiO2"
 
 [shapes]
 material = "Si_400_1000"
 
 [shapes.cuboid]
-num_samples = 10000
+num_samples = 10
 params = ["h", "l", "w", "a", "b"]
 param_ranges = { h = [0.010, 0.100], l = [0.010, 0.100], w = [0.010, 0.100], a = [0.010, 0.100], b = [0.010, 0.100] }
 
 [shapes.cylinder]
-num_samples = 10000
+num_samples = 10
 params = ["h", "l", "a"]
 param_ranges = { h = [0.010, 0.100], l = [0.005, 0.050], a = [0.010, 0.100] }
 
 [shapes.polygon]
-num_samples = 10000
+num_samples = 10
 params = ["h", "l", "a", "n"]
 param_ranges = { h = [0.010, 0.100], l = [0.010, 0.100], a = [0.010, 0.100], n = [3, 6] }
 
 [shapes.ring]
-num_samples = 10000
+num_samples = 10
 params = ["h", "r", "i", "a"]
 param_ranges = { h = [0.010, 0.100], l = [0.005, 0.050], i = [0.002, 0.010], a = [0.010, 0.100] }
 
 [shapes.random]
-num_samples = 10000
+num_samples = 10
 params = ["h", "l", "a", "cov"]
 param_ranges = { h = [0.010, 0.100], l = [0.010, 0.100], a = [0.010, 0.100], cov = [0.1, 0.9] }

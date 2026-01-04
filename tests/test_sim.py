@@ -1,3 +1,5 @@
+import os
+
 import matplotlib.pyplot as plt
 import meep as mp
 import numpy as np
@@ -8,7 +10,9 @@ from datasets.simulator import Simulator
 
 
 def test_sim_1():
-    config = toml.load("test_config.toml")
+    config = toml.load(
+        f"{os.path.dirname(os.path.abspath(__file__))}/../configs/test_config.toml"
+    )
     shape_config = config["shapes"]["polygon"]
     shape_config["name"] = "polygon"
     shape_config["material"] = config["shapes"]["material"]
@@ -37,6 +41,7 @@ def test_sim_1():
         show_sources=True,
         show_monitors=True,
     )
+    plt.savefig("test_simulation_plot.png")
 
     plt.figure(figsize=(10, 6))
     plt.plot(
@@ -54,4 +59,8 @@ def test_sim_1():
     plt.title("S-Parameters")
     plt.legend()
     plt.grid(True)
-    plt.show()
+    plt.savefig("test_s_parameters_plot.png")
+
+
+if __name__ == "__main__":
+    test_sim_1()

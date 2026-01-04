@@ -3,7 +3,6 @@ from typing import Dict, List, Optional
 
 import h5py
 import meep as mp
-import numpy as np
 import toml
 
 from datasets.shapes import Shape, ShapeGenerator
@@ -16,7 +15,7 @@ def simulate_shape(
     config: Dict,
     output_dir: Optional[str] = None,
 ) -> None:
-    # mp.verbosity(0)
+    mp.verbosity(0)
 
     # Load shape dataset configuration
     shape_config = config["shapes"][shape_name]
@@ -49,14 +48,6 @@ def simulate_shape(
         metadata_filename = os.path.join(output_dir, "metadata.toml")
         with open(metadata_filename, "a") as f:
             toml.dump({shape_name: metadata}, f)
-
-        wavelength_array = np.linspace(
-            1 / (metadata["fcen"] + metadata["fwidth"] / 2),
-            1 / (metadata["fcen"] - metadata["fwidth"] / 2),
-            metadata["nfreq"],
-        )
-        npy_filename = os.path.join(output_dir, "wavelengths.npy")
-        np.save(npy_filename, wavelength_array)
 
 
 def save_derived_data(
