@@ -29,6 +29,12 @@ def simulate_dataset() -> None:
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         help="Set the logging level",
     )
+    parser.add_argument(
+        "--slurm_job_id",
+        type=int,
+        default=-1,
+        help="SLURM job ID if running as a SLURM job.",
+    )
     args: Namespace = parser.parse_args()
 
     logger.setLevel(args.log)
@@ -51,6 +57,7 @@ def simulate_dataset() -> None:
             shape_name,
             config,
             shape_dir,
+            slurm_job_id=args.slurm_job_id,
         )
 
     logger.info(f"Dataset generation completed. Output directory: {args.output_dir}")

@@ -14,6 +14,7 @@ def simulate_shape(
     shape_name: str,
     config: Dict,
     output_dir: Optional[str] = None,
+    slurm_job_id: int = -1,
 ) -> None:
     mp.verbosity(0)
 
@@ -25,10 +26,12 @@ def simulate_shape(
 
     # Simulate dataset
     simulator: Optional[Simulator] = None
+    shape_config["num_samples"] = 1 if slurm_job_id >= 0 else shape_config["num_samples"]
     for iter in track(
         range(shape_config["num_samples"]),
         description=f"[green]Simulating {shape_name} shapes...",
         console=console,
+        disable=slurm_job_id >= 0,
     ):
         shape = shape_generator.get_shape(randomize=True)
         logger.debug(f"Generated shape: {shape.to_dict()}")
@@ -39,9 +42,9 @@ def simulate_shape(
         simulator.init_simulation_instance()
         simulator.run()
         if output_dir is not None:
-            save_derived_data(shape, simulator, config["get"], output_dir, iter)
+            save_derived_data(shape, simulator, config["get"], output_dir, slurm_job_id if slurm_job_id >= 0 else iter)
 
-    if output_dir is not None and simulator is not None:
+    if output_dir is not None and simulator is not None and not slurm_job_id >= 0:
         metadata = simulator.get_sim_cell_generics()
         metadata["shape"] = shape_name
 
