@@ -179,7 +179,12 @@ class Simulator:
 
     def run_empty(self) -> None:
         logger.debug("Running empty simulation for normalization...")
+
+        def run_logger():
+            logger.debug(f"Simulation time: {self.sim.meep_time()}")
+
         self.sim.run(
+            mp.at_every(10, run_logger),
             until_after_sources=mp.stop_when_fields_decayed(
                 20, mp.Ex, self.cell["stopping_ref"], 1e-9
             ),
@@ -191,7 +196,12 @@ class Simulator:
 
     def run(self, dt=20, decay_by=1e-7) -> None:
         logger.debug("Running full simulation for normalization...")
+
+        def run_logger():
+            logger.debug(f"Simulation time: {self.sim.meep_time}")
+
         self.sim.run(
+            mp.at_every(10, run_logger),
             until_after_sources=mp.stop_when_fields_decayed(
                 dt, mp.Ex, self.cell["stopping_ref"], decay_by
             ),

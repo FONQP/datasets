@@ -17,8 +17,8 @@ lambda_end = 0.9
 lambda_step = 0.01
 
 [cell]
-pml = {h = 1.2}
-airgap = 1.2
+pml = {h = 1.3}
+airgap = 1.1
 
 [substrate]
 h = 1.2

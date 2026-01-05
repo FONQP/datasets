@@ -71,7 +71,6 @@ class Polygon(Shape):
         self.n = int(self.n)
 
     def check_constraints(self) -> bool:
-        print(self.l / math.sin(math.pi / self.n), self.a)
         if (self.n < 3) or ((self.l / math.sin(math.pi / self.n)) > self.a):
             return False
         return True
