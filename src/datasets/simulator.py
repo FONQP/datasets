@@ -180,8 +180,8 @@ class Simulator:
     def run_empty(self) -> None:
         logger.debug("Running empty simulation for normalization...")
 
-        def run_logger():
-            logger.debug(f"Simulation time: {self.sim.meep_time()}")
+        def run_logger(sim):
+            logger.info(f"Simulation time: {sim.meep_time():.2f}")
 
         self.sim.run(
             mp.at_every(10, run_logger),
@@ -197,8 +197,8 @@ class Simulator:
     def run(self, dt=20, decay_by=1e-7) -> None:
         logger.debug("Running full simulation for normalization...")
 
-        def run_logger():
-            logger.debug(f"Simulation time: {self.sim.meep_time}")
+        def run_logger(sim):
+            logger.info(f"Simulation time: {sim.meep_time():.2f}")
 
         self.sim.run(
             mp.at_every(10, run_logger),
