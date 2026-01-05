@@ -13,12 +13,9 @@ def make_cell(shape: Shape, config: Dict) -> Dict[str, Any]:
     lambda_start = config["simulation"]["lambda_start"]
     lambda_end = config["simulation"]["lambda_end"]
 
-    fmin = 1.0 / lambda_end
-    fmax = 1.0 / lambda_start
-
-    fcen = 0.5 * (fmin + fmax)
-    fwidth = fmax - fmin
-    nfreq = int((lambda_end - lambda_start) / config["simulation"]["lambda_step"]) + 1
+    lambda_center = (lambda_start + lambda_end) / 2
+    lambda_width = lambda_end - lambda_start
+    nfreq = int(lambda_width // config["simulation"]["lambda_step"] + 1)
 
     # Simulation cell
     cell_height = (
@@ -59,7 +56,7 @@ def make_cell(shape: Shape, config: Dict) -> Dict[str, Any]:
     # Sources
     sources = [
         mp.EigenModeSource(
-            src=mp.GaussianSource(frequency=fcen, fwidth=fwidth),
+            src=mp.GaussianSource(wavelength=lambda_center, width=lambda_width),
             center=mp.Vector3(
                 0,
                 0,
@@ -98,8 +95,8 @@ def make_cell(shape: Shape, config: Dict) -> Dict[str, Any]:
     )
 
     cell: Dict[str, Any] = {
-        "fcen": fcen,
-        "fwidth": fwidth,
+        "lambda_center": lambda_center,
+        "lambda_width": lambda_width,
         "nfreq": nfreq,
         "pml_layers": [mp.PML(thickness=config["cell"]["pml"]["h"], direction=mp.Z)],
         "airgap": config["cell"]["airgap"],
@@ -138,8 +135,8 @@ class Simulator:
         }
 
         return {
-            "fcen": self.cell["fcen"],
-            "fwidth": self.cell["fwidth"],
+            "lambda_center": self.cell["lambda_center"],
+            "lambda_width": self.cell["lambda_width"],
             "nfreq": self.cell["nfreq"],
             "pml_layers": self.cell["pml_layers"],
             "airgap": self.cell["airgap"],
@@ -161,15 +158,21 @@ class Simulator:
         )
 
         self.s11_monitor = self.sim.add_mode_monitor(
-            self.cell["fcen"],
-            self.cell["fwidth"],
-            self.cell["nfreq"],
+            1
+            / np.linspace(
+                self.cell["lambda_center"] + self.cell["lambda_width"] / 2,
+                self.cell["lambda_center"] - self.cell["lambda_width"] / 2,
+                self.cell["nfreq"],
+            ),
             self.cell["flux_regions"]["s11"],
         )
         self.s21_monitor = self.sim.add_mode_monitor(
-            self.cell["fcen"],
-            self.cell["fwidth"],
-            self.cell["nfreq"],
+            1
+            / np.linspace(
+                self.cell["lambda_center"] + self.cell["lambda_width"] / 2,
+                self.cell["lambda_center"] - self.cell["lambda_width"] / 2,
+                self.cell["nfreq"],
+            ),
             self.cell["flux_regions"]["s21"],
         )
 
@@ -201,12 +204,11 @@ class Simulator:
         res_s21 = self.sim.get_eigenmode_coefficients(self.s21_monitor, [1])
         transmitted = np.array([coef[1] for coef in res_s21.alpha[0]])
 
-        freqs = np.linspace(
-            self.cell["fcen"] - self.cell["fwidth"] / 2,
-            self.cell["fcen"] + self.cell["fwidth"] / 2,
+        lambdas = np.linspace(
+            self.cell["lambda_center"] + self.cell["lambda_width"] / 2,
+            self.cell["lambda_center"] - self.cell["lambda_width"] / 2,
             self.cell["nfreq"],
         )
-        lambdas = 1.0 / freqs
 
         mask = np.abs(self.incident) > 1e-10
         S11 = np.zeros_like(self.incident)

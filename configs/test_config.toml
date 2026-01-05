@@ -14,7 +14,7 @@ get = [
 resolution = 150
 lambda_start = 0.6
 lambda_end = 0.9
-lambda_step = 0.001
+lambda_step = 0.01
 
 [cell]
 pml = {h = 1.2}

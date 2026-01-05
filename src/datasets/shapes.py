@@ -195,7 +195,7 @@ def get_geometric_object(shape: Shape) -> List[mp.GeometricObject]:
         )
         inner = mp.Cylinder(
             radius=shape.i / 2,
-            height=shape.h,
+            height=shape.h + 2e-3,
             material=mp.air,
         )
         geom = [outer, inner]

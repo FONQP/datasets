@@ -1,46 +1,46 @@
 units = "um"
 sampler = "lhs"
-shape_list = ["cuboid", "cylinder", "polygon", "ring"]
+shape_list = ["cuboid", "cylinder", "polygon", "ring", "random"]
 get = ["S_parameters"]
 
 [simulation]
-resolution = 200
+resolution = 300
 lambda_start = 0.6
 lambda_end = 0.9
-lambda_step = 0.001
+lambda_step = 0.0005
 
 [cell]
-pml = {h = 1.2}
-airgap = 1
+pml = {h = 1.5}
+airgap = 1.5
 
 [substrate]
-h = 1.2
+h = 1.5
 material = "SiO2"
 
 [shapes]
 material = "Si_400_1000"
 
 [shapes.cuboid]
-num_samples = 10
+num_samples = 10000
 params = ["h", "l", "w", "a", "b"]
-param_ranges = { h = [0.010, 0.100], l = [0.010, 0.100], w = [0.010, 0.100], a = [0.010, 0.100], b = [0.010, 0.100] }
+param_ranges = { h = [0.050, 0.300], l = [0.050, 0.300], w = [0.050, 0.300], a = [0.050, 0.300], b = [0.050, 0.300] }
 
 [shapes.cylinder]
-num_samples = 10
+num_samples = 10000
 params = ["h", "l", "a"]
-param_ranges = { h = [0.010, 0.100], l = [0.005, 0.050], a = [0.010, 0.100] }
+param_ranges = { h = [0.050, 0.300], l = [0.050, 0.300], a = [0.050, 0.300] }
 
 [shapes.polygon]
-num_samples = 10
+num_samples = 10000
 params = ["h", "l", "a", "n"]
-param_ranges = { h = [0.010, 0.100], l = [0.010, 0.100], a = [0.010, 0.100], n = [3, 6] }
+param_ranges = { h = [0.050, 0.300], l = [0.050, 0.300], a = [0.050, 0.300], n = [3, 6] }
 
 [shapes.ring]
-num_samples = 10
-params = ["h", "r", "i", "a"]
-param_ranges = { h = [0.010, 0.100], l = [0.005, 0.050], i = [0.002, 0.010], a = [0.010, 0.100] }
+num_samples = 10000
+params = ["h", "l", "i", "a"]
+param_ranges = { h = [0.050, 0.300], l = [0.050, 0.300], i = [0.050, 0.300], a = [0.050, 0.300] }
 
 [shapes.random]
-num_samples = 10
+num_samples = 10000
 params = ["h", "l", "a", "cov"]
-param_ranges = { h = [0.010, 0.100], l = [0.010, 0.100], a = [0.010, 0.100], cov = [0.1, 0.9] }
+param_ranges = { h = [0.050, 0.300], l = [0.050, 0.300], a = [0.050, 0.300], cov = [0.1, 0.9] }

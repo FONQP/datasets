@@ -4,6 +4,7 @@ from typing import Dict, List, Optional
 import h5py
 import meep as mp
 import toml
+from mpi4py import MPI
 
 from datasets.shapes import Shape, ShapeGenerator
 from datasets.simulator import Simulator
@@ -16,7 +17,8 @@ def simulate_shape(
     output_dir: Optional[str] = None,
     slurm_job_id: int = -1,
 ) -> None:
-    mp.verbosity(0)
+    mp.verbosity(1)
+    comm = MPI.COMM_WORLD
 
     # Load shape dataset configuration
     shape_config = config["shapes"][shape_name]
@@ -26,15 +28,25 @@ def simulate_shape(
 
     # Simulate dataset
     simulator: Optional[Simulator] = None
-    shape_config["num_samples"] = 1 if slurm_job_id >= 0 else shape_config["num_samples"]
-    for iter in track(
-        range(shape_config["num_samples"]),
-        description=f"[green]Simulating {shape_name} shapes...",
-        console=console,
-        disable=slurm_job_id >= 0,
-    ):
-        shape = shape_generator.get_shape(randomize=True)
-        logger.debug(f"Generated shape: {shape.to_dict()}")
+    shape_config["num_samples"] = (
+        1 if slurm_job_id >= 0 else shape_config["num_samples"]
+    )
+
+    iterable = range(shape_config["num_samples"])
+    if mp.am_master():
+        iterable = track(
+            iterable,
+            description="[green]Simulating...",
+            console=console,
+            disable=slurm_job_id >= 0,
+        )
+
+    for iter in iterable:
+        shape = None
+        if mp.am_master():
+            shape = shape_generator.get_shape(randomize=True)
+            logger.debug(f"Generated shape: {shape.to_dict()}")
+        shape = comm.bcast(shape, root=0)
 
         simulator = Simulator(shape, config)
         simulator.init_simulation_instance(empty=True)
@@ -42,15 +54,26 @@ def simulate_shape(
         simulator.init_simulation_instance()
         simulator.run()
         if output_dir is not None:
-            save_derived_data(shape, simulator, config["get"], output_dir, slurm_job_id if slurm_job_id >= 0 else iter)
+            save_derived_data(
+                shape,
+                simulator,
+                config["get"],
+                output_dir,
+                slurm_job_id if slurm_job_id >= 0 else iter,
+            )
 
-    if output_dir is not None and simulator is not None and not slurm_job_id >= 0:
+    if (
+        output_dir is not None
+        and simulator is not None
+        and not slurm_job_id >= 1
+        and mp.am_master()
+    ):
         metadata = simulator.get_sim_cell_generics()
         metadata["shape"] = shape_name
 
         metadata_filename = os.path.join(output_dir, "metadata.toml")
         with open(metadata_filename, "a") as f:
-            toml.dump({shape_name: metadata}, f)
+            toml.dump(metadata, f)
 
 
 def save_derived_data(

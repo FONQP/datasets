@@ -9,4 +9,5 @@ wheels/
 # Virtual environments
 .venv
 
-simulated_datasets/
+simulated_datasets/*
+logs/*
