@@ -15,7 +15,13 @@ def make_cell(shape: Shape, config: Dict) -> Dict[str, Any]:
 
     lambda_center = (lambda_start + lambda_end) / 2
     lambda_width = lambda_end - lambda_start
-    nfreq = int(lambda_width // config["simulation"]["lambda_step"] + 1)
+    nfreq = int(lambda_width // config["simulation"]["lambda_step"]) + 1
+
+    f_min = 1.0 / lambda_end
+    f_max = 1.0 / lambda_start
+    
+    f_center = 0.5 * (f_min + f_max)
+    f_width = f_max - f_min
 
     # Simulation cell
     cell_height = (
@@ -56,7 +62,7 @@ def make_cell(shape: Shape, config: Dict) -> Dict[str, Any]:
     # Sources
     sources = [
         mp.EigenModeSource(
-            src=mp.GaussianSource(wavelength=lambda_center, width=lambda_width),
+            src=mp.GaussianSource(frequency=f_center, fwidth=f_width),
             center=mp.Vector3(
                 0,
                 0,

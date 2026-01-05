@@ -44,10 +44,7 @@ def simulate_shape(
     for iter in iterable:
         shape = None
         if mp.am_master():
-            shape = shape_generator.get_shape(
-                randomize=True if slurm_job_id < 0 else False,
-                linear_interpolate_ratio=slurm_job_id / shape_config["num_samples"],
-            )
+            shape = shape_generator.get_shape(randomize=True)
             logger.debug(f"Generated shape: {shape.to_dict()}")
         shape = comm.bcast(shape, root=0)
 
