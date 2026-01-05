@@ -4,17 +4,17 @@ shape_list = ["cuboid", "cylinder", "polygon", "ring", "random"]
 get = ["S_parameters"]
 
 [simulation]
-resolution = 300
+resolution = 220
 lambda_start = 0.6
 lambda_end = 0.9
-lambda_step = 0.0005
+lambda_step = 0.001
 
 [cell]
-pml = {h = 1.5}
-airgap = 1.5
+pml = {h = 1.3}
+airgap = 1.1
 
 [substrate]
-h = 1.5
+h = 1.2
 material = "SiO2"
 
 [shapes]
