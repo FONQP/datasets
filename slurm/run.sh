@@ -1,9 +1,9 @@
 #!/bin/bash
 # Usage: ./run.sh [NODES] [TIME] [SCRIPT_PATH]
 
-DEFAULT_NODES=10
+DEFAULT_NODES=1
 DEFAULT_TIME="12:00:00"
-DEFAULT_SCRIPT="gen_dataset --config /scratch/21cs30065/datasets/configs/config.toml --log=INFO"
+DEFAULT_SCRIPT=""gen_dataset --output_dir /scratch/21cs30065/datasets/simulated_datasets/test_run --config /scratch/21cs30065/datasets/configs/config.toml --log=DEBUG"
 
 NODES=${1:-$DEFAULT_NODES}
 TIME=${2:-$DEFAULT_TIME}

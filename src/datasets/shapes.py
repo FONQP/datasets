@@ -110,7 +110,9 @@ class ShapeGenerator:
             self.shape_config["param_ranges"][p][1] for p in self.shape_config["params"]
         ]
 
-    def get_shape(self, randomize: bool = True) -> Shape:
+    def get_shape(
+        self, randomize: bool = True, linear_interpolate_ratio: float = 0.0
+    ) -> Shape:
         MAX_TRIES = 100
         for _ in range(MAX_TRIES):
             if randomize:
@@ -122,9 +124,15 @@ class ShapeGenerator:
                 }
             else:
                 params = {
-                    p: self.l_bounds[j]
+                    p: round(
+                        self.l_bounds[j]
+                        + linear_interpolate_ratio
+                        * (self.u_bounds[j] - self.l_bounds[j]),
+                        3,
+                    )
                     for j, p in enumerate(self.shape_config["params"])
                 }
+
             params["material"] = str_to_material(self.shape_config["material"])
             shape = get_shape(ShapeType(self.shape_config["name"]), params)
 

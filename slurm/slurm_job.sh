@@ -2,10 +2,10 @@
 #SBATCH --job-name=metamizer_dataset
 #SBATCH --output=logs/sim_%j.out
 #SBATCH --error=logs/sim_%j.err
-#SBATCH --nodes=10
+#SBATCH --nodes=1
 #SBATCH --ntasks-per-node=40
 #SBATCH --partition=medium
-#SBATCH --time=05:00:00
+#SBATCH --time=12:00:00
 #SBATCH --array=0-99%10
 #SBATCH --chdir=/scratch/21cs30065/datasets
 

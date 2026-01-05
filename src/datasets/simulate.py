@@ -17,7 +17,7 @@ def simulate_shape(
     output_dir: Optional[str] = None,
     slurm_job_id: int = -1,
 ) -> None:
-    mp.verbosity(1)
+    mp.verbosity(0)
     comm = MPI.COMM_WORLD
 
     # Load shape dataset configuration
@@ -44,7 +44,10 @@ def simulate_shape(
     for iter in iterable:
         shape = None
         if mp.am_master():
-            shape = shape_generator.get_shape(randomize=True)
+            shape = shape_generator.get_shape(
+                randomize=True if slurm_job_id < 0 else False,
+                linear_interpolate_ratio=slurm_job_id / shape_config["num_samples"],
+            )
             logger.debug(f"Generated shape: {shape.to_dict()}")
         shape = comm.bcast(shape, root=0)
 
