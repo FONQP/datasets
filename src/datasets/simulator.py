@@ -186,7 +186,7 @@ class Simulator:
         self.sim.run(
             mp.at_every(10, run_logger),
             until_after_sources=mp.stop_when_fields_decayed(
-                20, mp.Ex, self.cell["stopping_ref"], 1e-9
+                20, mp.Ex, self.cell["stopping_ref"], 1e-7
             ),
         )
 
@@ -194,7 +194,7 @@ class Simulator:
         self.incident = np.array([coef[1] for coef in res_norm.alpha[0]])
         del self.sim
 
-    def run(self, dt=20, decay_by=1e-7) -> None:
+    def run(self, dt=20, decay_by=1e-6) -> None:
         logger.debug("Running full simulation for normalization...")
 
         def run_logger(sim):

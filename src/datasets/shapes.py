@@ -92,7 +92,8 @@ class RandomShape(Shape):
     cov: float = 0.1
 
     def check_constraints(self) -> bool:
-        return True
+        check = super().check_constraints()
+        return check
 
 
 class ShapeGenerator:

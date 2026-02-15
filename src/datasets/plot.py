@@ -27,10 +27,21 @@ def plot():
         required=False,
         help="Path to the TOML file containing wavelength configuration",
     )
+    parser.add_argument(
+        "--attr",
+        type=bool,
+        default=True,
+        help="Prints HDF5 attributes if set to True",
+    )
     args: Namespace = parser.parse_args()
 
     if args.h5 and args.lambdas:
         plot_h5(args.h5, args.lambdas)
+        if args.attr:
+            with h5py.File(args.h5, "r") as f:
+                print("HDF5 Attributes:")
+                for key, value in f.attrs.items():
+                    print(f"{key}: {value}")
     else:
         data = np.loadtxt(args.csv, delimiter=",")
         if data.shape[1] == 3:
