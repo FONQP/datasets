@@ -81,15 +81,21 @@ def save_derived_data(
 ) -> None:
     structure = shape.to_dict()
 
-    S_parameters = simulator.get_S_parameters() if "S_parameters" in save_list else {}
-
     filename = f"{output_dir}/data/{iter:06d}.h5"
     if mp.am_master():
         with h5py.File(filename, "w") as f:
             if "S_parameters" in save_list:
+                S_parameters = (
+                    simulator.get_S_parameters() if "S_parameters" in save_list else {}
+                )
                 for k, v in S_parameters.items():
                     if k in ["S11", "S21"]:
                         f.create_dataset(k, data=v, compression="gzip")
+
+            if "E_fields" in save_list:
+                E_fields = simulator.get_E_fields() if "E_fields" in save_list else {}
+                for k, v in E_fields.items():
+                    f.create_dataset(k, data=v, compression="gzip")
 
             for key, value in structure.items():
                 f.attrs[key] = value

@@ -122,6 +122,7 @@ class Simulator:
         self.cell = make_cell(shape=shape, config=config)
         self.default_material = config.get("default_material", mp.air)
         self.resolution = config["simulation"].get("resolution", 50)
+        self.dft_nfreqs = config["simulation"].get("dft_nfreqs", 10)
 
         logger.debug(
             f"Simulator initialized with shape: {shape.name}, and geometry: {self.cell['geometry']}"
@@ -143,6 +144,7 @@ class Simulator:
             "fcen": self.cell["fcen"],
             "fwidth": self.cell["fwidth"],
             "nfreq": self.cell["nfreq"],
+            "dft_nfreqs": self.dft_nfreqs,
             "pml_layers": self.cell["pml_layers"],
             "airgap": self.cell["airgap"],
             "cell_size": self.cell["cell_size"],
@@ -173,6 +175,15 @@ class Simulator:
             self.cell["fwidth"],
             self.cell["nfreq"],
             self.cell["flux_regions"]["s21"],
+        )
+
+        self.field_monitor = self.sim.add_dft_fields(
+            [mp.Ex, mp.Ey, mp.Ez],
+            self.cell["fcen"],
+            self.cell["fwidth"],
+            self.dft_nfreqs,
+            center=self.cell["geometry"][0].center,
+            size=mp.Vector3(self.cell["cell_size"].x, self.cell["cell_size"].y, 0),
         )
 
         return self.sim
@@ -229,3 +240,21 @@ class Simulator:
         S21[mask] = transmitted[mask] / self.incident[mask]
 
         return {"wavelengths": lambdas, "S11": S11, "S21": S21}
+
+    def get_E_fields(self) -> Dict[str, np.ndarray]:
+        logger.debug("Getting field data...")
+        E = {"Ex": [], "Ey": [], "Ez": []}
+
+        for i in range(self.dft_nfreqs):
+            ex = self.sim.get_dft_array(self.field_monitor, mp.Ex, num_freq=i)
+            ey = self.sim.get_dft_array(self.field_monitor, mp.Ey, num_freq=i)
+            ez = self.sim.get_dft_array(self.field_monitor, mp.Ez, num_freq=i)
+            E["Ex"].append(ex)
+            E["Ey"].append(ey)
+            E["Ez"].append(ez)
+
+        return {
+            "Ex": np.array(E["Ex"]),
+            "Ey": np.array(E["Ey"]),
+            "Ez": np.array(E["Ez"]),
+        }

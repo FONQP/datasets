@@ -1,13 +1,17 @@
 units = "um"
 sampler = "lhs"
 shape_list = ["cuboid", "cylinder", "polygon", "ring", "random"]
-get = ["S_parameters"]
+get = [
+    "S_parameters",
+    "E_fields",
+]
 
 [simulation]
 resolution = 220
 lambda_start = 0.6
 lambda_end = 0.9
 lambda_step = 0.001
+dft_nfreqs = 10
 
 [cell]
 pml = {h = 1.3}

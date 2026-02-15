@@ -1,5 +1,6 @@
 import os
 from argparse import ArgumentParser, Namespace
+from typing import Optional
 
 import h5py
 import matplotlib.pyplot as plt
@@ -83,20 +84,32 @@ def plot_h5(h5_filepath: str, wavelength_filepath: str) -> None:
     fcen = metadata["fcen"]
     fwidth = metadata["fwidth"]
     nfreq = metadata["nfreq"]
+    dft_nfreqs = metadata.get("dft_nfreqs", nfreq)
     frequencies = np.linspace(fcen - fwidth / 2, fcen + fwidth / 2, nfreq)
     wavelengths = 1 / frequencies
+    dft_wavelengths = 1 / np.linspace(fcen - fwidth / 2, fcen + fwidth / 2, dft_nfreqs)
 
     with h5py.File(h5_filepath, "r") as f:
         s11_complex = f["S11"][:]  # type: ignore
         s21_complex = f["S21"][:]  # type: ignore
+        ex = f["Ex"][:] if "Ex" in f else None  # type: ignore
+        ey = f["Ey"][:] if "Ey" in f else None  # type: ignore
+        ez = f["Ez"][:] if "Ez" in f else None  # type: ignore
         shape_name = f.attrs.get("name", "Unknown Shape")
 
     title = f"S Parameters for {shape_name}: {os.path.basename(h5_filepath)}"
-    plot_s11_s21(s11_complex, s21_complex, wavelengths, title)
+    plot_s11_s21(s11_complex, s21_complex, wavelengths, title)  # type: ignore
+
+    if ex is not None and ey is not None and ez is not None:
+        plot_e_fields(ex, ey, ez, dft_wavelengths)  # type: ignore
 
 
 def plot_s11_s21(
-    s11: np.ndarray, s21: np.ndarray, lambdas: np.ndarray, title: str = ""
+    s11: np.ndarray,
+    s21: np.ndarray,
+    lambdas: np.ndarray,
+    title: str = "",
+    save_path: Optional[str] = None,
 ) -> None:
     R = np.abs(s11) ** 2
     T = np.abs(s21) ** 2
@@ -114,4 +127,48 @@ def plot_s11_s21(
     plt.ylim([-0.05, 1.05])
 
     plt.tight_layout()
-    plt.show()
+
+    if save_path:
+        plt.savefig(save_path)
+    else:
+        plt.show()
+
+
+def plot_e_fields(
+    ex: np.ndarray,
+    ey: np.ndarray,
+    ez: np.ndarray,
+    lambdas: np.ndarray,
+    save_path: Optional[str] = None,
+) -> None:
+    num_rows = len(lambdas)
+    field_data = {"Ex": ex, "Ey": ey, "Ez": ez}
+    plt.figure(figsize=(15, 5 * num_rows))
+    for i in range(num_rows):
+        for i in range(num_rows):
+            plt.subplot(num_rows, 3, i * 3 + 1)
+            plt.title(f"Field Distribution at Wavelength Index {i}")
+            for component, data in field_data.items():
+                plt.subplot(
+                    num_rows, 3, i * 3 + list(field_data.keys()).index(component) + 2
+                )
+                plt.imshow(
+                    np.abs(data[i].T),
+                    origin="lower",
+                    extent=(
+                        -data.shape[1] / 2,
+                        data.shape[1] / 2,
+                        -data.shape[0] / 2,
+                        data.shape[0] / 2,
+                    ),
+                )
+                plt.colorbar(label=f"|{component}|")
+                plt.xlabel("x (μm)")
+                plt.ylabel("y (μm)")
+
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path)
+    else:
+        plt.show()

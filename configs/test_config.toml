@@ -11,10 +11,11 @@ get = [
 ]
 
 [simulation]
-resolution = 100
+resolution = 50
 lambda_start = 0.6
 lambda_end = 0.9
 lambda_step = 0.01
+dft_nfreqs = 10
 
 [cell]
 pml = {h = 1.3}

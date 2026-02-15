@@ -36,7 +36,6 @@ def test_sim_1():
 
     simulator.sim.plot2D(
         output_plane=vertical_slice,
-        fields=mp.Ex,
         eps_parameters={"cmap": "binary", "interpolation": "none"},
         show_sources=True,
         show_monitors=True,
@@ -60,6 +59,27 @@ def test_sim_1():
     plt.legend()
     plt.grid(True)
     plt.savefig("test_s_parameters_plot.png")
+
+    E_fields = simulator.get_E_fields()
+    plt.figure(figsize=(15, 5))
+    for i, component in enumerate(["Ex", "Ey", "Ez"]):
+        plt.subplot(1, 3, i + 1)
+        plt.imshow(
+            np.abs(E_fields[component][2].T),
+            origin="lower",
+            extent=(
+                -cell.x / 2,
+                cell.x / 2,
+                -cell.y / 2,
+                cell.y / 2,
+            ),
+        )
+        plt.colorbar(label=f"|{component}|")
+        plt.title(f"{component} Field Magnitude")
+        plt.xlabel("x ($u m$)")
+        plt.ylabel("y ($u m$)")
+    plt.tight_layout()
+    plt.savefig("test_e_fields_plot.png")
 
 
 if __name__ == "__main__":
