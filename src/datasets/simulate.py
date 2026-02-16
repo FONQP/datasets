@@ -92,9 +92,11 @@ def save_derived_data(
                     if k in ["S11", "S21"]:
                         f.create_dataset(k, data=v, compression="gzip")
 
-            if "E_fields" in save_list:
-                E_fields = simulator.get_E_fields() if "E_fields" in save_list else {}
-                for k, v in E_fields.items():
+            if "EH_fields" in save_list:
+                EH_fields = (
+                    simulator.get_EH_fields() if "EH_fields" in save_list else {}
+                )
+                for k, v in EH_fields.items():
                     f.create_dataset(k, data=v, compression="gzip")
 
             for key, value in structure.items():

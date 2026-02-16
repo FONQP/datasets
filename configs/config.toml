@@ -3,7 +3,7 @@ sampler = "lhs"
 shape_list = ["cuboid", "cylinder", "polygon", "ring", "random"]
 get = [
     "S_parameters",
-    "E_fields",
+    "EH_fields",
 ]
 
 [simulation]

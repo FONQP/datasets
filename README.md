@@ -37,21 +37,3 @@ uv run pytest
 ```
 
 ---
-
-plt.figure(figsize=(15, 5))
-for i, component in enumerate(["Ex", "Ey", "Ez"]):
-    plt.subplot(1, 3, i + 1)
-    plt.imshow(
-        np.abs(e[component][0].T),
-        origin="lower",
-        extent=(
-            -cell.x / 2,
-            cell.x / 2,
-            -cell.y / 2,
-            cell.y / 2,
-        ),
-    )
-    plt.colorbar(label=f"|{component}|")
-    plt.title(f"{component} Field Magnitude")
-    plt.xlabel("x ($u m$)")
-    plt.ylabel("y ($u m$)")

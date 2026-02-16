@@ -1,6 +1,6 @@
 import os
 from argparse import ArgumentParser, Namespace
-from typing import Optional
+from typing import Dict, Optional
 
 import h5py
 import matplotlib.pyplot as plt
@@ -29,6 +29,12 @@ def plot():
         help="Path to the TOML file containing wavelength configuration",
     )
     parser.add_argument(
+        "--save",
+        type=str,
+        default=None,
+        help="Path to save the generated plot",
+    )
+    parser.add_argument(
         "--attr",
         type=bool,
         default=True,
@@ -37,7 +43,7 @@ def plot():
     args: Namespace = parser.parse_args()
 
     if args.h5 and args.lambdas:
-        plot_h5(args.h5, args.lambdas)
+        plot_h5(args.h5, args.lambdas, save_path=args.save)
         if args.attr:
             with h5py.File(args.h5, "r") as f:
                 print("HDF5 Attributes:")
@@ -49,7 +55,7 @@ def plot():
             lambdas = data[:, 0]
             real_part = data[:, 1]
             imag_part = data[:, 2]
-            plot_re_im(real_part, imag_part, lambdas)
+            plot_re_im(real_part, imag_part, lambdas, save_path=args.save)
         elif data.shape[1] == 2:
             if args.lambdas:
                 lambdas = np.loadtxt(args.lambdas)
@@ -57,7 +63,7 @@ def plot():
                 lambdas = np.arange(data.shape[0])
             real_part = data[:, 0]
             imag_part = data[:, 1]
-            plot_re_im(real_part, imag_part, lambdas)
+            plot_re_im(real_part, imag_part, lambdas, save_path=args.save)
 
 
 def plot_meta_atom_idx(dataset, idx):
@@ -66,7 +72,7 @@ def plot_meta_atom_idx(dataset, idx):
     plot_re_im(real_part, imag_part, np.arange(len(real_part)))
 
 
-def plot_re_im(real_part, imag_part, lambdas):
+def plot_re_im(real_part, imag_part, lambdas, save_path=None):
     plt.figure(figsize=(10, 6))
     plt.plot(lambdas, real_part, label="Real Part")
     plt.plot(lambdas, imag_part, label="Imaginary Part")
@@ -76,10 +82,15 @@ def plot_re_im(real_part, imag_part, lambdas):
     plt.ylabel("Value")
     plt.legend()
     plt.grid()
-    plt.show()
+    if save_path:
+        plt.savefig(save_path)
+    else:
+        plt.show()
 
 
-def plot_h5(h5_filepath: str, wavelength_filepath: str) -> None:
+def plot_h5(
+    h5_filepath: str, wavelength_filepath: str, save_path: Optional[str] = None
+) -> None:
     metadata = toml.load(wavelength_filepath)
     fcen = metadata["fcen"]
     fwidth = metadata["fwidth"]
@@ -95,13 +106,25 @@ def plot_h5(h5_filepath: str, wavelength_filepath: str) -> None:
         ex = f["Ex"][:] if "Ex" in f else None  # type: ignore
         ey = f["Ey"][:] if "Ey" in f else None  # type: ignore
         ez = f["Ez"][:] if "Ez" in f else None  # type: ignore
+        hx = f["Hx"][:] if "Hx" in f else None  # type: ignore
+        hy = f["Hy"][:] if "Hy" in f else None  # type: ignore
+        hz = f["Hz"][:] if "Hz" in f else None  # type: ignore
         shape_name = f.attrs.get("name", "Unknown Shape")
 
     title = f"S Parameters for {shape_name}: {os.path.basename(h5_filepath)}"
-    plot_s11_s21(s11_complex, s21_complex, wavelengths, title)  # type: ignore
+    plot_s11_s21(s11_complex, s21_complex, wavelengths, title, save_path=save_path)  # type: ignore
 
     if ex is not None and ey is not None and ez is not None:
-        plot_e_fields(ex, ey, ez, dft_wavelengths)  # type: ignore
+        fields_dict = {
+            "Ex": ex,
+            "Ey": ey,
+            "Ez": ez,
+            "Hx": hx,
+            "Hy": hy,
+            "Hz": hz,
+        }
+        fields_dict = {k: v for k, v in fields_dict.items() if v is not None}
+        plot_eh_fields(fields_dict, dft_wavelengths, save_path=save_path)
 
 
 def plot_s11_s21(
@@ -129,46 +152,42 @@ def plot_s11_s21(
     plt.tight_layout()
 
     if save_path:
-        plt.savefig(save_path)
+        plt.savefig(f"{save_path}_s11_s21.png")
     else:
         plt.show()
 
 
-def plot_e_fields(
-    ex: np.ndarray,
-    ey: np.ndarray,
-    ez: np.ndarray,
+def plot_eh_fields(
+    fields: Dict[str, np.ndarray],
     lambdas: np.ndarray,
     save_path: Optional[str] = None,
 ) -> None:
     num_rows = len(lambdas)
-    field_data = {"Ex": ex, "Ey": ey, "Ez": ez}
-    plt.figure(figsize=(15, 5 * num_rows))
+    num_fields = len(fields)
+    plt.figure(figsize=(6 * num_fields, 5 * num_rows))
+    field_names = list(fields.keys())
     for i in range(num_rows):
-        for i in range(num_rows):
-            plt.subplot(num_rows, 3, i * 3 + 1)
-            plt.title(f"Field Distribution at Wavelength Index {i}")
-            for component, data in field_data.items():
-                plt.subplot(
-                    num_rows, 3, i * 3 + list(field_data.keys()).index(component) + 2
-                )
-                plt.imshow(
-                    np.abs(data[i].T),
-                    origin="lower",
-                    extent=(
-                        -data.shape[1] / 2,
-                        data.shape[1] / 2,
-                        -data.shape[0] / 2,
-                        data.shape[0] / 2,
-                    ),
-                )
-                plt.colorbar(label=f"|{component}|")
-                plt.xlabel("x (μm)")
-                plt.ylabel("y (μm)")
+        for j, component in enumerate(field_names):
+            plt.subplot(num_rows, num_fields, i * num_fields + j + 1)
+            data = fields[component]
+            plt.imshow(
+                np.abs(data[i].T),
+                origin="lower",
+                extent=(
+                    -data.shape[2] / 2,
+                    data.shape[2] / 2,
+                    -data.shape[1] / 2,
+                    data.shape[1] / 2,
+                ),
+            )
+            plt.colorbar(label=f"|{component}|", shrink=0.8)
+            plt.xlabel("x (μm)", fontsize=26)
+            plt.ylabel("y (μm)", fontsize=26)
+            plt.title(f"{component} at λ={lambdas[i]:.2f} μm", fontsize=30)
 
     plt.tight_layout()
 
     if save_path:
-        plt.savefig(save_path)
+        plt.savefig(f"{save_path}_eh_fields.png")
     else:
         plt.show()

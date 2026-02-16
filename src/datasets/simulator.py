@@ -178,7 +178,7 @@ class Simulator:
         )
 
         self.field_monitor = self.sim.add_dft_fields(
-            [mp.Ex, mp.Ey, mp.Ez],
+            [mp.Ex, mp.Ey, mp.Ez, mp.Hx, mp.Hy, mp.Hz],
             self.cell["fcen"],
             self.cell["fwidth"],
             self.dft_nfreqs,
@@ -241,20 +241,16 @@ class Simulator:
 
         return {"wavelengths": lambdas, "S11": S11, "S21": S21}
 
-    def get_E_fields(self) -> Dict[str, np.ndarray]:
+    def get_EH_fields(self) -> Dict[str, Any]:
         logger.debug("Getting field data...")
-        E = {"Ex": [], "Ey": [], "Ez": []}
+        EH = {"Ex": [], "Ey": [], "Ez": [], "Hx": [], "Hy": [], "Hz": []}
 
         for i in range(self.dft_nfreqs):
-            ex = self.sim.get_dft_array(self.field_monitor, mp.Ex, num_freq=i)
-            ey = self.sim.get_dft_array(self.field_monitor, mp.Ey, num_freq=i)
-            ez = self.sim.get_dft_array(self.field_monitor, mp.Ez, num_freq=i)
-            E["Ex"].append(ex)
-            E["Ey"].append(ey)
-            E["Ez"].append(ez)
+            for component in EH.keys():
+                EH[component].append(
+                    self.sim.get_dft_array(
+                        self.field_monitor, getattr(mp, component), num_freq=i
+                    )
+                )
 
-        return {
-            "Ex": np.array(E["Ex"]),
-            "Ey": np.array(E["Ey"]),
-            "Ez": np.array(E["Ez"]),
-        }
+        return EH

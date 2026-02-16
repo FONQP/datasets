@@ -7,7 +7,7 @@ shape_list = [
 
 get = [
     "S_parameters",
-    "E_fields",
+    "EH_fields",
 ]
 
 [simulation]
