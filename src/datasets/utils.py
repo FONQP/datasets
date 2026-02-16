@@ -15,6 +15,10 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def get_freqs(fcen: float, fwidth: float, nfreq: int) -> np.ndarray:
+    return np.linspace(fcen - fwidth / 2, fcen + fwidth / 2, nfreq)
+
+
 def consolidate_h5(root_dir: str, output_path: str) -> None:
     with h5py.File(output_path, "w") as master:
         wav_path = os.path.join(root_dir, "wavelengths.npy")
@@ -52,3 +56,24 @@ def consolidate_dataset(root_dir: str, output_path: str) -> None:
         if os.path.isdir(shape_dir):
             output_file = os.path.join(output_path, f"{shape_name}.h5")
             consolidate_h5(shape_dir, output_file)
+
+
+def consolidate_dataset_cli() -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Consolidate dataset H5 files.")
+    parser.add_argument(
+        "--root_dir",
+        type=str,
+        required=True,
+        help="Root directory containing shape subdirectories with H5 files.",
+    )
+    parser.add_argument(
+        "--output_path",
+        type=str,
+        required=True,
+        help="Output path for the consolidated H5 file.",
+    )
+
+    args = parser.parse_args()
+    consolidate_dataset(args.root_dir, args.output_path)

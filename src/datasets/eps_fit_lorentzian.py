@@ -149,7 +149,12 @@ if __name__ == "__main__":
         p_rand = [10 ** (np.random.random()) for _ in range(3 * NUM_LORENTZIANS)]
         try:
             ps[m, :], mins[m] = lorentzfit(
-                p_rand, freqs_reduced, eps_reduced, nlopt.LD_MMA, 1e-25, 50000
+                p_rand,  # type: ignore
+                freqs_reduced,
+                eps_reduced,
+                nlopt.LD_MMA,
+                1e-25,
+                50000,
             )
         except Exception as e:
             print(f"Iteration {m} failed: {e}")

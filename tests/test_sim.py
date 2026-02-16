@@ -2,11 +2,12 @@ import os
 
 import matplotlib.pyplot as plt
 import meep as mp
-import numpy as np
 import toml
 
+from datasets.plot import plot_EH_fields, plot_S_parameters
 from datasets.shapes import ShapeGenerator
 from datasets.simulator import Simulator
+from datasets.utils import get_freqs
 
 
 def test_sim_1():
@@ -25,8 +26,7 @@ def test_sim_1():
     simulator.init_simulation_instance()
     simulator.run()
 
-    S_parameters = simulator.get_S_parameters()
-
+    # Plot cell slice
     cell = simulator.cell["cell_size"]
     vertical_slice = mp.Volume(
         center=mp.Vector3(0, 0, 0),
@@ -42,44 +42,28 @@ def test_sim_1():
     )
     plt.savefig("test_simulation_plot.png")
 
-    plt.figure(figsize=(10, 6))
-    plt.plot(
-        S_parameters["wavelengths"],
-        np.abs(S_parameters["S11"]) ** 2,
-        label="$|S_{11}|^2$ (Reflection)",
+    # Plot S-parameters
+    S_parameters = simulator.get_S_parameters()
+    wavelengths = 1 / get_freqs(
+        simulator.cell["fcen"],
+        simulator.cell["fwidth"],
+        simulator.cell["nfreq"],
     )
-    plt.plot(
-        S_parameters["wavelengths"],
-        np.abs(S_parameters["S21"]) ** 2,
-        label="$|S_{21}|^2$ (Transmission)",
+    plot_S_parameters(
+        S_parameters["S11"],
+        S_parameters["S21"],
+        lambdas=wavelengths,
+        save_path="test_s_parameters_plot.png",
     )
-    plt.xlabel("Wavelength ($u m$)")
-    plt.ylabel("Magnitude")
-    plt.title("S-Parameters")
-    plt.legend()
-    plt.grid(True)
-    plt.savefig("test_s_parameters_plot.png")
 
-    E_fields = simulator.get_E_fields()
-    plt.figure(figsize=(15, 5))
-    for i, component in enumerate(["Ex", "Ey", "Ez"]):
-        plt.subplot(1, 3, i + 1)
-        plt.imshow(
-            np.abs(E_fields[component][2].T),
-            origin="lower",
-            extent=(
-                -cell.x / 2,
-                cell.x / 2,
-                -cell.y / 2,
-                cell.y / 2,
-            ),
-        )
-        plt.colorbar(label=f"|{component}|")
-        plt.title(f"{component} Field Magnitude")
-        plt.xlabel("x ($u m$)")
-        plt.ylabel("y ($u m$)")
-    plt.tight_layout()
-    plt.savefig("test_e_fields_plot.png")
+    # Plot E and H fields
+    EH_fields = simulator.get_EH_fields()
+    dft_wavelengths = 1 / get_freqs(
+        simulator.cell["fcen"],
+        simulator.cell["fwidth"],
+        simulator.cell["dft_nfreqs"],
+    )
+    plot_EH_fields(EH_fields, dft_wavelengths, save_path="test_eh_fields_plot.png")
 
 
 if __name__ == "__main__":

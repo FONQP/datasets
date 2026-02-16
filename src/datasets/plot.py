@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import toml
 
+from datasets.utils import get_freqs
+
 
 def plot():
     parser = ArgumentParser(description="Plot S-parameters")
@@ -92,13 +94,12 @@ def plot_h5(
     h5_filepath: str, wavelength_filepath: str, save_path: Optional[str] = None
 ) -> None:
     metadata = toml.load(wavelength_filepath)
-    fcen = metadata["fcen"]
-    fwidth = metadata["fwidth"]
-    nfreq = metadata["nfreq"]
-    dft_nfreqs = metadata.get("dft_nfreqs", nfreq)
-    frequencies = np.linspace(fcen - fwidth / 2, fcen + fwidth / 2, nfreq)
-    wavelengths = 1 / frequencies
-    dft_wavelengths = 1 / np.linspace(fcen - fwidth / 2, fcen + fwidth / 2, dft_nfreqs)
+    wavelengths = 1 / get_freqs(metadata["fcen"], metadata["fwidth"], metadata["nfreq"])
+    dft_wavelengths = 1 / get_freqs(
+        metadata["fcen"],
+        metadata["fwidth"],
+        metadata.get("dft_nfreqs", metadata["nfreq"]),
+    )
 
     with h5py.File(h5_filepath, "r") as f:
         s11_complex = f["S11"][:]  # type: ignore
@@ -112,7 +113,13 @@ def plot_h5(
         shape_name = f.attrs.get("name", "Unknown Shape")
 
     title = f"S Parameters for {shape_name}: {os.path.basename(h5_filepath)}"
-    plot_s11_s21(s11_complex, s21_complex, wavelengths, title, save_path=save_path)  # type: ignore
+    plot_S_parameters(
+        s11_complex,  # type: ignore
+        s21_complex,  # type: ignore
+        wavelengths,
+        title,
+        save_path=f"{save_path}_s11_s21.png",
+    )
 
     if ex is not None and ey is not None and ez is not None:
         fields_dict = {
@@ -124,10 +131,12 @@ def plot_h5(
             "Hz": hz,
         }
         fields_dict = {k: v for k, v in fields_dict.items() if v is not None}
-        plot_eh_fields(fields_dict, dft_wavelengths, save_path=save_path)
+        plot_EH_fields(
+            fields_dict, dft_wavelengths, save_path=f"{save_path}_eh_fields.png"
+        )
 
 
-def plot_s11_s21(
+def plot_S_parameters(
     s11: np.ndarray,
     s21: np.ndarray,
     lambdas: np.ndarray,
@@ -152,12 +161,12 @@ def plot_s11_s21(
     plt.tight_layout()
 
     if save_path:
-        plt.savefig(f"{save_path}_s11_s21.png")
+        plt.savefig(save_path)
     else:
         plt.show()
 
 
-def plot_eh_fields(
+def plot_EH_fields(
     fields: Dict[str, np.ndarray],
     lambdas: np.ndarray,
     save_path: Optional[str] = None,
@@ -169,16 +178,12 @@ def plot_eh_fields(
     for i in range(num_rows):
         for j, component in enumerate(field_names):
             plt.subplot(num_rows, num_fields, i * num_fields + j + 1)
-            data = fields[component]
+            data = np.asarray(fields[component])
             plt.imshow(
                 np.abs(data[i].T),
                 origin="lower",
-                extent=(
-                    -data.shape[2] / 2,
-                    data.shape[2] / 2,
-                    -data.shape[1] / 2,
-                    data.shape[1] / 2,
-                ),
+                extent=(0, data.shape[2], 0, data.shape[1]),
+                cmap="viridis",
             )
             plt.colorbar(label=f"|{component}|", shrink=0.8)
             plt.xlabel("x (μm)", fontsize=26)
@@ -188,6 +193,6 @@ def plot_eh_fields(
     plt.tight_layout()
 
     if save_path:
-        plt.savefig(f"{save_path}_eh_fields.png")
+        plt.savefig(save_path)
     else:
         plt.show()

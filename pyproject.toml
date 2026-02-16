@@ -23,11 +23,9 @@ requires = ["uv_build>=0.9.7,<0.10.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
-dev = [
-    "nlopt>=2.10.0",
-    "pytest>=9.0.2",
-]
+dev = ["nlopt>=2.10.0", "pytest>=9.0.2"]
 
 [project.scripts]
 gen_dataset = "datasets:simulate_dataset"
 plot = "datasets.plot:plot"
+consolidate_dataset = "datasets.utils:consolidate_dataset_cli"

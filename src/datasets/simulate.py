@@ -57,7 +57,7 @@ def simulate_shape(
             save_derived_data(
                 shape,
                 simulator,
-                config["get"],
+                config["measure"],
                 output_dir,
                 slurm_job_id if slurm_job_id >= 0 else iter,
             )
@@ -68,7 +68,7 @@ def simulate_shape(
         and not slurm_job_id >= 1
         and mp.am_master()
     ):
-        metadata = simulator.get_sim_cell_generics()
+        metadata = simulator.cell.copy()
         metadata["shape"] = shape_name
 
         metadata_filename = os.path.join(output_dir, "metadata.toml")
@@ -77,27 +77,25 @@ def simulate_shape(
 
 
 def save_derived_data(
-    shape: Shape, simulator: Simulator, save_list: List[str], output_dir: str, iter: int
+    shape: Shape,
+    simulator: Simulator,
+    measure_list: List[str],
+    output_dir: str,
+    iter: int,
 ) -> None:
+    results = {}
+    if "S_parameters" in measure_list:
+        results.update(simulator.get_S_parameters())
+    if "EH_fields" in measure_list:
+        results.update(simulator.get_EH_fields())
     structure = shape.to_dict()
 
-    filename = f"{output_dir}/data/{iter:06d}.h5"
+    filename = os.path.join(output_dir, "data", f"{iter:06d}.h5")
+
     if mp.am_master():
         with h5py.File(filename, "w") as f:
-            if "S_parameters" in save_list:
-                S_parameters = (
-                    simulator.get_S_parameters() if "S_parameters" in save_list else {}
-                )
-                for k, v in S_parameters.items():
-                    if k in ["S11", "S21"]:
-                        f.create_dataset(k, data=v, compression="gzip")
-
-            if "EH_fields" in save_list:
-                EH_fields = (
-                    simulator.get_EH_fields() if "EH_fields" in save_list else {}
-                )
-                for k, v in EH_fields.items():
-                    f.create_dataset(k, data=v, compression="gzip")
+            for k, v in results.items():
+                f.create_dataset(k, data=v, compression="gzip")
 
             for key, value in structure.items():
                 f.attrs[key] = value

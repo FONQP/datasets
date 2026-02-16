@@ -1,10 +1,7 @@
 units = "um"
 sampler = "lhs"
 shape_list = ["cuboid", "cylinder", "polygon", "ring", "random"]
-get = [
-    "S_parameters",
-    "EH_fields",
-]
+measure = ["S_parameters", "EH_fields"]
 
 [simulation]
 resolution = 220
@@ -14,7 +11,7 @@ lambda_step = 0.001
 dft_nfreqs = 10
 
 [cell]
-pml = {h = 1.3}
+pml = { h = 1.3 }
 airgap = 1.1
 
 [substrate]
@@ -27,7 +24,22 @@ material = "Si_400_1000"
 [shapes.cuboid]
 num_samples = 10000
 params = ["h", "l", "w", "a", "b"]
-param_ranges = { h = [0.050, 0.300], l = [0.050, 0.300], w = [0.050, 0.300], a = [0.050, 0.300], b = [0.050, 0.300] }
+param_ranges = { h = [
+    0.050,
+    0.300,
+], l = [
+    0.050,
+    0.300,
+], w = [
+    0.050,
+    0.300,
+], a = [
+    0.050,
+    0.300,
+], b = [
+    0.050,
+    0.300,
+] }
 
 [shapes.cylinder]
 num_samples = 10000
@@ -37,14 +49,50 @@ param_ranges = { h = [0.050, 0.300], l = [0.050, 0.300], a = [0.050, 0.300] }
 [shapes.polygon]
 num_samples = 10000
 params = ["h", "l", "a", "n"]
-param_ranges = { h = [0.050, 0.300], l = [0.050, 0.300], a = [0.050, 0.300], n = [3, 6] }
+param_ranges = { h = [
+    0.050,
+    0.300,
+], l = [
+    0.050,
+    0.300,
+], a = [
+    0.050,
+    0.300,
+], n = [
+    3,
+    6,
+] }
 
 [shapes.ring]
 num_samples = 10000
 params = ["h", "l", "i", "a"]
-param_ranges = { h = [0.050, 0.300], l = [0.050, 0.300], i = [0.050, 0.300], a = [0.050, 0.300] }
+param_ranges = { h = [
+    0.050,
+    0.300,
+], l = [
+    0.050,
+    0.300,
+], i = [
+    0.050,
+    0.300,
+], a = [
+    0.050,
+    0.300,
+] }
 
 [shapes.random]
 num_samples = 10000
 params = ["h", "l", "a", "cov"]
-param_ranges = { h = [0.050, 0.300], l = [0.050, 0.300], a = [0.050, 0.300], cov = [0.1, 0.9] }
+param_ranges = { h = [
+    0.050,
+    0.300,
+], l = [
+    0.050,
+    0.300,
+], a = [
+    0.050,
+    0.300,
+], cov = [
+    0.1,
+    0.9,
+] }

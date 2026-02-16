@@ -103,12 +103,19 @@ def make_cell(shape: Shape, config: Dict) -> Dict[str, Any]:
         "fcen": f_center,
         "fwidth": f_width,
         "nfreq": nfreq,
+        "dft_nfreqs": (
+            config["simulation"].get("dft_nfreqs", 10)
+            if ("EH_fields" in config["measure"])
+            else -1
+        ),
+        "default_material": config.get("default_material", mp.air),
         "pml_layers": [mp.PML(thickness=config["cell"]["pml"]["h"], direction=mp.Z)],
         "airgap": config["cell"]["airgap"],
         "geometry": [subs] + geom,
         "sources": sources,
         "flux_regions": flux_regions,
         "cell_size": sim_cell,
+        "resolution": config["simulation"].get("resolution", 50),
         "stopping_ref": mp.Vector3(
             0, 0, base_z + config["cell"]["pml"]["h"] + (config["substrate"]["h"] / 6)
         ),
@@ -120,36 +127,10 @@ def make_cell(shape: Shape, config: Dict) -> Dict[str, Any]:
 class Simulator:
     def __init__(self, shape: Shape, config: Dict) -> None:
         self.cell = make_cell(shape=shape, config=config)
-        self.default_material = config.get("default_material", mp.air)
-        self.resolution = config["simulation"].get("resolution", 50)
-        self.dft_nfreqs = config["simulation"].get("dft_nfreqs", 10)
 
         logger.debug(
             f"Simulator initialized with shape: {shape.name}, and geometry: {self.cell['geometry']}"
         )
-
-    def get_sim_cell_generics(self) -> Dict[str, Any]:
-        sources = {
-            "source_name": self.cell["sources"][0].src.__class__.__name__,
-            "frequency": self.cell["sources"][0].src.frequency,
-            "fwidth": 1 / self.cell["sources"][0].src.width,
-            "center": (
-                self.cell["sources"][0].center.x,
-                self.cell["sources"][0].center.y,
-                self.cell["sources"][0].center.z,
-            ),
-        }
-
-        return {
-            "fcen": self.cell["fcen"],
-            "fwidth": self.cell["fwidth"],
-            "nfreq": self.cell["nfreq"],
-            "dft_nfreqs": self.dft_nfreqs,
-            "pml_layers": self.cell["pml_layers"],
-            "airgap": self.cell["airgap"],
-            "cell_size": self.cell["cell_size"],
-            "sources": sources,
-        }
 
     def init_simulation_instance(self, empty: bool = False) -> mp.Simulation:
         self.sim = mp.Simulation(
@@ -157,8 +138,8 @@ class Simulator:
             boundary_layers=self.cell["pml_layers"],
             sources=self.cell["sources"],
             geometry=[] if empty else self.cell["geometry"],
-            default_material=self.default_material,
-            resolution=self.resolution,
+            default_material=self.cell["default_material"],
+            resolution=self.cell["resolution"],
             symmetries=self.cell.get("symmetries", []),
             k_point=mp.Vector3(),
             Courant=0.3,
@@ -177,14 +158,15 @@ class Simulator:
             self.cell["flux_regions"]["s21"],
         )
 
-        self.field_monitor = self.sim.add_dft_fields(
-            [mp.Ex, mp.Ey, mp.Ez, mp.Hx, mp.Hy, mp.Hz],
-            self.cell["fcen"],
-            self.cell["fwidth"],
-            self.dft_nfreqs,
-            center=self.cell["geometry"][0].center,
-            size=mp.Vector3(self.cell["cell_size"].x, self.cell["cell_size"].y, 0),
-        )
+        if self.cell["dft_nfreqs"] > 0:
+            self.field_monitor = self.sim.add_dft_fields(
+                [mp.Ex, mp.Ey, mp.Ez, mp.Hx, mp.Hy, mp.Hz],
+                self.cell["fcen"],
+                self.cell["fwidth"],
+                self.cell["dft_nfreqs"],
+                center=self.cell["geometry"][0].center,
+                size=mp.Vector3(self.cell["cell_size"].x, self.cell["cell_size"].y, 0),
+            )
 
         return self.sim
 
@@ -202,7 +184,7 @@ class Simulator:
         )
 
         res_norm = self.sim.get_eigenmode_coefficients(self.s21_monitor, [1])
-        self.incident = np.array([coef[1] for coef in res_norm.alpha[0]])
+        self.incident = np.array([coef[1] for coef in res_norm.alpha[0]])  # type: ignore
         del self.sim
 
     def run(self, dt=20, decay_by=1e-6) -> None:
@@ -221,17 +203,10 @@ class Simulator:
     def get_S_parameters(self) -> Dict[str, np.ndarray]:
         logger.debug("Getting S parameters...")
         res_s11 = self.sim.get_eigenmode_coefficients(self.s11_monitor, [1])
-        reflected = np.array([coef[0] for coef in res_s11.alpha[0]])
+        reflected = np.array([coef[0] for coef in res_s11.alpha[0]])  # type: ignore
 
         res_s21 = self.sim.get_eigenmode_coefficients(self.s21_monitor, [1])
-        transmitted = np.array([coef[1] for coef in res_s21.alpha[0]])
-
-        frequencies = np.linspace(
-            self.cell["fcen"] - self.cell["fwidth"] / 2,
-            self.cell["fcen"] + self.cell["fwidth"] / 2,
-            self.cell["nfreq"],
-        )
-        lambdas = 1.0 / frequencies
+        transmitted = np.array([coef[1] for coef in res_s21.alpha[0]])  # type: ignore
 
         mask = np.abs(self.incident) > 1e-10
         S11 = np.zeros_like(self.incident)
@@ -239,13 +214,18 @@ class Simulator:
         S11[mask] = reflected[mask] / self.incident[mask]
         S21[mask] = transmitted[mask] / self.incident[mask]
 
-        return {"wavelengths": lambdas, "S11": S11, "S21": S21}
+        return {"S11": S11, "S21": S21}
 
     def get_EH_fields(self) -> Dict[str, Any]:
+        if self.cell["dft_nfreqs"] <= 0:
+            raise ValueError(
+                "DFT fields were not set up in the simulator configuration."
+            )
+
         logger.debug("Getting field data...")
         EH = {"Ex": [], "Ey": [], "Ez": [], "Hx": [], "Hy": [], "Hz": []}
 
-        for i in range(self.dft_nfreqs):
+        for i in range(self.cell["dft_nfreqs"]):
             for component in EH.keys():
                 EH[component].append(
                     self.sim.get_dft_array(
