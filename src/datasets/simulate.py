@@ -29,7 +29,9 @@ def simulate_shape(
     # Simulate dataset
     simulator: Optional[Simulator] = None
     shape_config["num_samples"] = (
-        1 if slurm_job_id >= 0 else shape_config["num_samples"]
+        config["slurm"]["num_samples_per_job"]
+        if slurm_job_id >= 0
+        else shape_config["num_samples"]
     )
 
     iterable = range(shape_config["num_samples"])
@@ -59,7 +61,9 @@ def simulate_shape(
                 simulator,
                 config["measure"],
                 output_dir,
-                slurm_job_id if slurm_job_id >= 0 else iter,
+                (slurm_job_id * config["slurm"]["num_samples_per_job"]) + iter
+                if slurm_job_id >= 0
+                else iter,
             )
 
     if (

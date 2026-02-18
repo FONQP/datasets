@@ -96,3 +96,6 @@ param_ranges = { h = [
     0.1,
     0.9,
 ] }
+
+[slurm]
+num_samples_per_job = 5

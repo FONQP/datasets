@@ -17,9 +17,5 @@ conda activate pmp
 echo "Meep version check:"
 python -c "import meep; print(meep.__version__)"
 
-if [[ "$PYTHON_SCRIPT" == "test" ]]; then
-    mpirun -np $SLURM_NTASKS python tests/test_sim.py 
-else
-    mpirun -np $SLURM_NTASKS $PYTHON_SCRIPT --slurm_job_id $SLURM_ARRAY_TASK_ID
-fi
+mpirun -np $SLURM_NTASKS $PYTHON_SCRIPT --slurm_job_id $SLURM_ARRAY_TASK_ID
     

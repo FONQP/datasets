@@ -10,4 +10,5 @@ wheels/
 .venv
 
 simulated_datasets/*
+external_datasets/*
 logs/*
